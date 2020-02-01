@@ -1,6 +1,8 @@
-import java.io.File;
-import java.nio.file.Files;
-import java.util.Arrays;
+import java.io.BufferedInputStream;
+import java.io.FileInputStream;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
 
 /* Joao Maio s1621503 */
 
@@ -24,50 +26,59 @@ public class Sender1a {
     static int port;
     static String filename;
 
-    static int packetSize = 8;
+    static InetAddress address;
+    static DatagramSocket udpSocket;
 
-    public static void sendPacket() {}
+    static int packetSize = 10;
 
+    public static void connect() throws Exception {
+        address = InetAddress.getByName(remoteHost);
+        udpSocket = new DatagramSocket(port, address);
+        // TODO socket not configured properly
+        System.out.println("created socket at port " + udpSocket.getLocalPort());
+    }
+
+    public static void sendPacket(byte[] p) throws Exception {
+        DatagramPacket packet = new DatagramPacket(p, p.length);
+        udpSocket.send(packet);
+    }
 
     public static void sendFile() throws Exception {
         
-        File f = new File(filename);
-        
-        // https://funnelgarden.com/java_read_file/#New_IO_Reading_Bytes
-        // read all bytes at once (limited to 2GB)
-        byte[] fBytes = Files.readAllBytes(f.toPath());
+        FileInputStream fis = new FileInputStream(filename);
+        int filesize = fis.available();
+        BufferedInputStream bis = new BufferedInputStream(fis, packetSize);
         
         // https://stackoverflow.com/questions/1074228/is-there-any-java-function-or-util-class-which-does-rounding-this-way-func3-2
         // Divide x by n rounding up
         // int res = (x+n-1)/n
         
         // end of file packet = total size / packet size
-        byte eof = (byte) ((fBytes.length + packetSize - 1) / packetSize);
+        byte eof = (byte) ((filesize + packetSize - 1) / packetSize);
         System.out.println("packets to transmit = " + (int) eof);
 
         System.out.println("--------");
         
-        for (int seq = 0; seq * packetSize < fBytes.length; seq++) {
-
+        for (int seq = 0; seq * packetSize < filesize; seq++) {
 
             byte[] header = new byte[3];
-
             // convert seq to 2 bytes
             // https://stackoverflow.com/questions/1735840/how-do-i-split-an-integer-into-2-byte-binary
             header[0] = (byte) (seq & 0xFF);
             header[1] = (byte) ((seq >> 8) & 0xFF);
             header[2] = eof;
 
-            // System.out.println(String.format("header = %2s %2s %2s", (int)header[0], (int)header[1], (int)header[2]));
-            
-            // calculate offset in file bytes
-            int offset = seq * packetSize;
-
-            // System.out.println(seq + " --------");
             // this is the data in the packet
-            byte[] data = Arrays.copyOfRange(fBytes, offset, offset+packetSize);
-            
+            byte[] data = new byte[packetSize];
+            // buffer the input for the next packet
+            bis.read(data);
+
+            // for (byte b : data) {
+            //     System.out.println(b);
+            // }
+
             // TODO: send the data
+            sendPacket(data);
             
             // In the sender code, insert, at a minimum, a 10ms gap (i.e., sleep for 10ms)
             // after each packet transmission.
@@ -79,9 +90,8 @@ public class Sender1a {
             }
 
             System.out.println(String.format("sent: %3s", seq));
-
         }
-
+        fis.close();
     }
 
     public static void parseArgs(String[] args) throws Exception {
@@ -104,10 +114,12 @@ public class Sender1a {
         try {
             parseArgs(args);
 
+            connect();
+
             sendFile();
             
         } catch (Exception e) {
-            System.err.println(e);
+            e.printStackTrace();
             System.exit(0);
         }
         
