@@ -24,24 +24,13 @@ public class Sender1a {
 
     static String remoteHost;
     static int port;
-    static String filename;
+    
+    UDPClient client;
 
-    static InetAddress address;
-    static DatagramSocket udpSocket;
+    static String filename;
 
     static int packetSize = 10;
 
-    public static void connect() throws Exception {
-        address = InetAddress.getByName(remoteHost);
-        udpSocket = new DatagramSocket(port, address);
-        // TODO socket not configured properly
-        System.out.println("created socket at port " + udpSocket.getLocalPort());
-    }
-
-    public static void sendPacket(byte[] p) throws Exception {
-        DatagramPacket packet = new DatagramPacket(p, p.length);
-        udpSocket.send(packet);
-    }
 
     public static void sendFile() throws Exception {
         
@@ -78,7 +67,7 @@ public class Sender1a {
             // }
 
             // TODO: send the data
-            sendPacket(data);
+            client.sendPacket(data);
             
             // In the sender code, insert, at a minimum, a 10ms gap (i.e., sleep for 10ms)
             // after each packet transmission.
@@ -114,7 +103,8 @@ public class Sender1a {
         try {
             parseArgs(args);
 
-            connect();
+            client = new UDPClient(remoteHost, port);
+            // connect();
 
             sendFile();
             
