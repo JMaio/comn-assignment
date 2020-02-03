@@ -11,7 +11,7 @@ abstract class UDPInterface {
     static int port;
     // static InetAddress IPAddress;
     static DatagramSocket socket;
-    static int maxPacketSize = 1024;
+    static int maxPacketSize = 1027;
 
 
     abstract public void sendPacket(byte[] sendData, InetAddress ipAddress, int port) throws Exception;
