@@ -29,11 +29,4 @@ class UDPClient extends UDPInterface {
         sendPacket(sendData, IPAddress, port);
     }
 
-    // @Override
-    // public DatagramPacket receivePacket(int length) throws IOException {
-        
-    //     DatagramPacket pkt = new DatagramPacket(receiveData, receiveData.length);
-    //     socket.receive(pkt); 
-    // }
-
 }

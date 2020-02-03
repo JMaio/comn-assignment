@@ -13,19 +13,8 @@ abstract class UDPInterface {
     static DatagramSocket socket;
     static int maxPacketSize = 1024;
 
-    // public UDPInterface() {}
-    //  {
-    //     srvHost = host;
-    //     srvPort = port;
-    //     // IPAddress = InetAddress.getByName(host);
-    //     // clientSocket = new DatagramSocket();
-    // }
 
     abstract public void sendPacket(byte[] sendData, InetAddress ipAddress, int port) throws Exception;
-    //  {
-    //     // DatagramPacket p = new DatagramPacket(sendData, sendData.length, ipAddress, port);
-    //     // socket.send(p);
-    // }
 
     DatagramPacket receivePacket() throws IOException {
         byte[] data = new byte[maxPacketSize];
@@ -34,16 +23,5 @@ abstract class UDPInterface {
         socket.receive(p);
         return p;
     };
-    //  {
-    //     // byte[] receiveData = new byte[length];
-    //     // DatagramPacket receivePacket = new DatagramPacket(receiveData, length);
-    //     // socket.receive(receivePacket);
-
-    //     // return receiveData;
-    // }
-
-    // public void close() {
-    //     // socket.close();
-    // }
     
 }
