@@ -37,6 +37,7 @@ public class Receiver1b {
 
         boolean last = false;
 
+
         // until final packet is received
         while (!last) {
             // receive the next packet
@@ -47,10 +48,11 @@ public class Receiver1b {
 
             CustomACKMessage ack = new CustomACKMessage(c.seq);
             server.sendPacket(ack.toByteArray(), p.getAddress(), p.getPort());
-
+            System.out.println(ack);
+            
             // write this to the file
             fos.write(c.data);
-
+            
             last = c.last;
         }
 

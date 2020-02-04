@@ -31,4 +31,9 @@ public class CustomACKMessage {
 
         return a;
     }
+
+    @Override
+    public String toString() {
+        return String.format("CustomACKMessage(seq=%d)", seq);
+    }
 }

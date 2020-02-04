@@ -2,7 +2,6 @@ import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.net.DatagramPacket;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -47,12 +46,11 @@ public class Sender1b {
 
     private static ExecutorService executorService = Executors.newSingleThreadExecutor();
 
-    public static Future<Boolean> waitForACK(final int seq) {
+    public static Future<CustomACKMessage> waitForACK() {
         // if ack is correct, return true
-        return executorService.submit(new Callable<Boolean>() {
-            public Boolean call() throws IOException {
-                CustomACKMessage ack = CustomACKMessage.fromDatagramPacket(client.receivePacket());
-                return ack.seq == seq;
+        return executorService.submit(new Callable<CustomACKMessage>() {
+            public CustomACKMessage call() throws IOException {
+                return CustomACKMessage.fromDatagramPacket(client.receivePacket());
             }
         });
     }
@@ -80,27 +78,23 @@ public class Sender1b {
 
             CustomUDPPacketData pkt = new CustomUDPPacketData(seq, (seq + 1) == last ? true : false, data);
 
-            boolean match = false;
-            // send the packet every time 
+            // ACK wait
+            CustomACKMessage ack = null;
             do {
                 client.sendPacket(pkt.toByteArray());
+                System.out.println(String.format("sent: %s", pkt));
+
                 try {
-                    match = waitForACK(seq).get(retryTimeout, TimeUnit.MILLISECONDS);
-                } catch (TimeoutException e) {}
-            } while (!match);
+                    // start the timer
+                    ack = waitForACK().get(retryTimeout, TimeUnit.MILLISECONDS);
+                } catch (TimeoutException e) {
+                    System.out.println("ack timed out");
+                }
 
-            // {
-            //     // start timer
-            //     // executorService.submit(Sender1b::waitForACK, );
-            //     // DatagramPacket rcv = null;
-    
-            //     // Timeout before re-transmitting
-            //     // https://stackoverflow.com/questions/24104313/how-do-i-make-a-delay-in-java
-            //     client.receivePacket();
-            // }
+                System.out.println(ack);
+                // if "corrupt" or incorrect seq, re-send
+            } while (ack == null || ack.seq != seq);
 
-
-            System.out.println(String.format("sent: %s", pkt));
         }
 
         fis.close();
