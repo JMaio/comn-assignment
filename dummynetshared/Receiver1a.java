@@ -31,21 +31,6 @@ public class Receiver1a {
 
     static int dataPacketSize = 1024;
 
-    public static DatagramPacket waitAndGetInitial() throws IOException {
-        DatagramPacket p = null;
-        while (p == null) {
-
-            p = server.receivePacket();
-
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
-        }
-        return p;
-    }
-
     public static void receiveFile() throws IOException {
         File file = new File(filename);
         // create file if not exists
