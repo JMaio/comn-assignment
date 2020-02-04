@@ -79,9 +79,11 @@ public class Receiver1b {
             server = new UDPServer(port);
 
             receiveFile();
+            
         } catch (Exception e) {
             e.printStackTrace();
-            System.exit(0);
         }
+
+        System.exit(0);
     }
 }

@@ -133,10 +133,11 @@ public class Sender1b {
             client = new UDPClient(remoteHost, port);
 
             sendFile();
+
         } catch (Exception e) {
             e.printStackTrace();
-            System.exit(0);
         }
-
+        
+        System.exit(0);
     }
 }
