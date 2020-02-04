@@ -1,3 +1,3 @@
 #!/bin/bash
 
-clear; java Sender1a localhost 200 test.jpg
+clear; java Sender1a localhost 100 test.jpg
