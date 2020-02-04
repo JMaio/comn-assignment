@@ -6,13 +6,9 @@ import java.net.InetAddress;
 class UDPServer extends UDPInterface {
 
     public UDPServer(int port) throws Exception {
-        this.port = port;
+        UDPInterface.port = port;
         socket = new DatagramSocket(port);
     }
-
-    // private void dumpToFile(byte[] data) {
-    //     File
-    // }
     
     @Override
     public void sendPacket(byte[] sendData, InetAddress ipAddress, int port) throws IOException {
