@@ -12,7 +12,6 @@ public class CustomUDPPacketData {
     // ------- data --------
     // data: 1024 bytes
 
-
     public int seq;
     public boolean last;
 
@@ -23,7 +22,7 @@ public class CustomUDPPacketData {
     public CustomUDPPacketData(int seq, boolean last, byte[] data) {
         this.seq = seq;
         this.last = last;
-        this.data = data;    
+        this.data = data;
     }
 
     public static CustomUDPPacketData fromDatagramPacket(DatagramPacket p) {
@@ -33,11 +32,8 @@ public class CustomUDPPacketData {
         byte[] d = new byte[p.getLength() - headerSize];
         System.arraycopy(raw, headerSize, d, 0, d.length);
 
-        CustomUDPPacketData cpkt = new CustomUDPPacketData(
-            ((raw[1] & 0xFF) << 8) | (raw[0] & 0xFF), 
-            raw[2] == 0 ? true : false, 
-            d
-        );
+        CustomUDPPacketData cpkt = new CustomUDPPacketData(((raw[1] & 0xFF) << 8) | (raw[0] & 0xFF),
+                raw[2] == 0 ? true : false, d);
 
         return cpkt;
     }
@@ -61,12 +57,13 @@ public class CustomUDPPacketData {
     }
 
     public String getByteSeq() {
-        return String.format("%8s %8s (%d)", Integer.toBinaryString(seq & 0xFF), Integer.toBinaryString((seq >> 8) & 0xFF), seq);
+        return String.format("%8s %8s (%d)", Integer.toBinaryString(seq & 0xFF),
+                Integer.toBinaryString((seq >> 8) & 0xFF), seq);
     }
 
     @Override
     public String toString() {
         return String.format("CustomUDPPacketData(seq=%d, last=%b, size(data)=%d)", seq, last, data.length);
     }
-    
+
 }

@@ -48,14 +48,14 @@ public class Receiver1a {
 
     public static void receiveFile() throws IOException {
         File file = new File(filename);
-        //create file if not exists
+        // create file if not exists
         if (!file.exists()) {
             file.createNewFile();
         }
 
         // TODO: this should probably be kept in memory until all SEQs are received
         FileOutputStream fos = new FileOutputStream(filename);
-        
+
         boolean last = false;
 
         // until final packet is received
@@ -65,8 +65,7 @@ public class Receiver1a {
             CustomUDPPacketData c = CustomUDPPacketData.fromDatagramPacket(p);
 
             System.out.println(c);
-            // System.out.println("got: " + c);
-            
+
             // write this to the file
             fos.write(c.data);
 
@@ -78,7 +77,7 @@ public class Receiver1a {
 
     public static void parseArgs(String[] args) throws Exception {
         // Check how many arguments were passed in
-        if(args.length != 2) {
+        if (args.length != 2) {
             throw new Exception("incorrect usage - correct usage is:\njava Receiver1a <Port> <Filename>");
         }
         // attempt to convert arguments - exit if error
@@ -97,14 +96,10 @@ public class Receiver1a {
 
             server = new UDPServer(port);
 
-            // DatagramPacket i = waitAndGetInitial();
-            // System.out.println(String.format("initial packet received: size=%d", i.getLength()));
-
             receiveFile();
-            
         } catch (Exception e) {
             e.printStackTrace();
             System.exit(0);
-        }   
+        }
     }
 }

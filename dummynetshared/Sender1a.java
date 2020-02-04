@@ -16,13 +16,14 @@ import java.io.FileInputStream;
 
 /**
  * Sender1a
+ * 
  * @author Joao Maio (s1621503)
  */
 public class Sender1a {
 
     static String remoteHost;
     static int port;
-    
+
     static UDPClient client;
 
     static String filename;
@@ -37,28 +38,24 @@ public class Sender1a {
 
         FileInputStream fis = new FileInputStream(file);
         BufferedInputStream bis = new BufferedInputStream(fis, dataPacketSize);
-        
+
         // https://stackoverflow.com/questions/1074228/is-there-any-java-function-or-util-class-which-does-rounding-this-way-func3-2
         // Divide x by n rounding up
         // int res = (x+n-1)/n
-        
-        // end of file packet = total size / packet size
         int last = (int) ((filesize + dataPacketSize - 1) / dataPacketSize);
-        // System.out.println("packets to transmit = " + eof);
 
-        System.out.println("--------");
-        
         for (int seq = 0; seq * dataPacketSize < filesize; seq++) {
-
-            // this is the data in the packet -- at most, the data packet size, could also be shorter if available data is lower than it
+            // this is the data in the packet -- at most, the data packet size,
+            // could also be shorter if available data is lower than maxSize
             byte[] data = new byte[Math.min(dataPacketSize, bis.available())];
+
             // buffer the input for the next packet
             bis.read(data);
-            
-            CustomUDPPacketData pkt = new CustomUDPPacketData(seq, (seq+1) == last ? true : false, data);
+
+            CustomUDPPacketData pkt = new CustomUDPPacketData(seq, (seq + 1) == last ? true : false, data);
 
             client.sendPacket(pkt.toByteArray());
-            
+
             // In the sender code, insert, at a minimum, a 10ms gap (i.e., sleep for 10ms)
             // after each packet transmission.
             // https://stackoverflow.com/questions/24104313/how-do-i-make-a-delay-in-java
@@ -69,14 +66,14 @@ public class Sender1a {
             }
 
             System.out.println(String.format("sent: %s", pkt));
-            // System.out.println(String.format("sent: %3s", seq));
         }
+
         fis.close();
     }
 
     public static void parseArgs(String[] args) throws Exception {
         // Check how many arguments were passed in
-        if(args.length != 3) {
+        if (args.length != 3) {
             throw new Exception("incorrect usage - correct usage is:\njava Sender1a <RemoteHost> <Port> <Filename>");
         }
         // attempt to convert arguments - exit if error
@@ -95,14 +92,12 @@ public class Sender1a {
             parseArgs(args);
 
             client = new UDPClient(remoteHost, port);
-            // packetSize = client.maxPacketSize;
 
             sendFile();
-            
         } catch (Exception e) {
             e.printStackTrace();
             System.exit(0);
         }
-        
+
     }
 }
