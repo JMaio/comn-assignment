@@ -1,8 +1,6 @@
 import java.io.BufferedInputStream;
+import java.io.File;
 import java.io.FileInputStream;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.InetAddress;
 
 /* Joao Maio s1621503 */
 
@@ -32,9 +30,12 @@ public class Sender1a {
     static int dataPacketSize = 1024;
 
     public static void sendFile() throws Exception {
-        
-        FileInputStream fis = new FileInputStream(filename);
-        int filesize = fis.available();
+
+        File file = new File(filename);
+        long filesize = file.length();
+        System.out.println("file size = " + filesize);
+
+        FileInputStream fis = new FileInputStream(file);
         BufferedInputStream bis = new BufferedInputStream(fis, dataPacketSize);
         
         // https://stackoverflow.com/questions/1074228/is-there-any-java-function-or-util-class-which-does-rounding-this-way-func3-2
@@ -42,32 +43,19 @@ public class Sender1a {
         // int res = (x+n-1)/n
         
         // end of file packet = total size / packet size
-        byte eof = (byte) ((filesize + dataPacketSize - 1) / dataPacketSize);
-        System.out.println("packets to transmit = " + (int) eof);
+        int last = (int) ((filesize + dataPacketSize - 1) / dataPacketSize);
+        // System.out.println("packets to transmit = " + eof);
 
         System.out.println("--------");
         
         for (int seq = 0; seq * dataPacketSize < filesize; seq++) {
 
-            // // header => | seq number (2Bytes) | last packet (1Byte) |
-            // byte[] header = new byte[3];
-            // // convert seq to 2 bytes
-            // // https://stackoverflow.com/questions/1735840/how-do-i-split-an-integer-into-2-byte-binary
-            // header[0] = (byte) (seq & 0xFF);
-            // header[1] = (byte) ((seq >> 8) & 0xFF);
-            // header[2] = eof;
-
-            // this is the data in the packet
-            byte[] data = new byte[dataPacketSize];
+            // this is the data in the packet -- at most, the data packet size, could also be shorter if available data is lower than it
+            byte[] data = new byte[Math.min(dataPacketSize, bis.available())];
             // buffer the input for the next packet
             bis.read(data);
             
-            CustomUDPPacketData pkt = new CustomUDPPacketData(seq, eof, data);
-            // // concatenate header with data
-            // // https://stackoverflow.com/questions/5513152/easy-way-to-concatenate-two-byte-arrays
-            // byte[] pkt = new byte[header.length + data.length];
-            // System.arraycopy(header, 0, pkt, 0, header.length);
-            // System.arraycopy(data, 0, pkt, header.length, data.length);
+            CustomUDPPacketData pkt = new CustomUDPPacketData(seq, (seq+1) == last ? true : false, data);
 
             client.sendPacket(pkt.toByteArray());
             
@@ -80,7 +68,8 @@ public class Sender1a {
                 Thread.currentThread().interrupt();
             }
 
-            System.out.println(String.format("sent: %3s", seq));
+            System.out.println(String.format("sent: %s", pkt));
+            // System.out.println(String.format("sent: %3s", seq));
         }
         fis.close();
     }

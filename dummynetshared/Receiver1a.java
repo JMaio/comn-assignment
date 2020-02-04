@@ -46,18 +46,34 @@ public class Receiver1a {
         return p;
     }
 
-    public static void receiveFile(DatagramPacket initial) throws IOException {
-        File file = new File("D:/data/file.txt");
+    public static void receiveFile() throws IOException {
+        File file = new File(filename);
         //create file if not exists
         if (!file.exists()) {
             file.createNewFile();
         }
 
+        // TODO: this should probably be kept in memory until all SEQs are received
         FileOutputStream fos = new FileOutputStream(filename);
         
-        server.receivePacket();
+        boolean last = false;
 
+        // until final packet is received
+        while (!last) {
+            // receive the next packet
+            DatagramPacket p = server.receivePacket();
+            CustomUDPPacketData c = CustomUDPPacketData.fromDatagramPacket(p);
 
+            System.out.println(c);
+            // System.out.println("got: " + c);
+            
+            // write this to the file
+            fos.write(c.data);
+
+            last = c.last;
+        }
+
+        fos.close();
     }
 
     public static void parseArgs(String[] args) throws Exception {
@@ -81,17 +97,14 @@ public class Receiver1a {
 
             server = new UDPServer(port);
 
-            DatagramPacket i = waitAndGetInitial();
-            System.out.println("initial packet received");
+            // DatagramPacket i = waitAndGetInitial();
+            // System.out.println(String.format("initial packet received: size=%d", i.getLength()));
 
-            receiveFile(i);
+            receiveFile();
             
         } catch (Exception e) {
             e.printStackTrace();
             System.exit(0);
-        }
-        
+        }   
     }
-
-    
 }
