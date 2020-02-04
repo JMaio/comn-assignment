@@ -14,26 +14,30 @@ public class CustomUDPPacketData {
 
 
     public int seq;
-    public int eof;
+    public boolean last;
 
     public byte[] data;
 
-    public CustomUDPPacketData(int seq, int eof, byte[] data) {
+    private static final int headerSize = 3;
+
+    public CustomUDPPacketData(int seq, boolean last, byte[] data) {
         this.seq = seq;
-        this.eof = eof;
+        this.last = last;
         this.data = data;    
     }
 
     public static CustomUDPPacketData fromDatagramPacket(DatagramPacket p) {
         byte[] raw = p.getData();
-        // copy data over
-        byte[] d = new byte[1024];
-        System.arraycopy(raw, 0, d, 0, d.length);
+        // copy data over - get data size from packet
+        // https://piazza.com/class/k5kzwbadzbk3aj?cid=13
+        byte[] d = new byte[p.getLength() - headerSize];
+        System.arraycopy(raw, headerSize, d, 0, d.length);
 
         CustomUDPPacketData cpkt = new CustomUDPPacketData(
-            (int) ((raw[1] << 8) | raw[0]), 
-            (int) raw[2], 
-            d);
+            ((raw[1] & 0xFF) << 8) | (raw[0] & 0xFF), 
+            raw[2] == 0 ? true : false, 
+            d
+        );
 
         return cpkt;
     }
@@ -45,7 +49,7 @@ public class CustomUDPPacketData {
         // https://stackoverflow.com/questions/1735840/how-do-i-split-an-integer-into-2-byte-binary
         header[0] = (byte) (seq & 0xFF);
         header[1] = (byte) ((seq >> 8) & 0xFF);
-        header[2] = (byte) eof;
+        header[2] = (byte) (last ? 0 : 1);
 
         // concatenate header with data
         // https://stackoverflow.com/questions/5513152/easy-way-to-concatenate-two-byte-arrays
@@ -54,6 +58,15 @@ public class CustomUDPPacketData {
         System.arraycopy(data, 0, pkt, header.length, data.length);
 
         return pkt;
+    }
+
+    public String getByteSeq() {
+        return String.format("%8s %8s (%d)", Integer.toBinaryString(seq & 0xFF), Integer.toBinaryString((seq >> 8) & 0xFF), seq);
+    }
+
+    @Override
+    public String toString() {
+        return String.format("CustomUDPPacketData(seq=%d, last=%b, size(data)=%d)", seq, last, data.length);
     }
     
 }
