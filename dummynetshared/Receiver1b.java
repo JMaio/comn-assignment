@@ -73,7 +73,7 @@ public class Receiver1b {
         try {
             port = Integer.parseInt(args[0]);
             filename = args[1];
-            System.out.println(String.format("listening on port '%d' and writing to file '%s'", port, filename));
+            // System.out.println(String.format("listening on port '%d' and writing to file '%s'", port, filename));
         } catch (Exception e) {
             throw new Exception("argument parse error:" + e);
         }
