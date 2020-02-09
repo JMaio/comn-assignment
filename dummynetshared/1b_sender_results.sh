@@ -5,7 +5,7 @@ echo "------------------------------"
 
 echo "stats = {" >> $FILENAME
 
-for timeout in 5 10 15 20 25 30 40 50 75 100 
+for timeout in 5 10 15 20 25 30 40 50 75 100
 do
     echo "timeout = $timeout"
     echo "$timeout: [" >> $FILENAME
@@ -15,6 +15,8 @@ do
         # Sender1b <RemoteHost> <Port> <Filename> <RetryTimeout>
         echo $n
         echo "\"`java Sender1b localhost 100 test.jpg $timeout`\"," >> $FILENAME
+        # wait for receiver to sync
+        sleep 2
     done
     echo "-------------------"
     echo "]," >> $FILENAME
