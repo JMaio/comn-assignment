@@ -8,12 +8,12 @@ import java.net.InetAddress;
 
 class UDPClient extends UDPInterface {
 
-    static String host;
-    static InetAddress IPAddress;
+    public final String host;
+    public final InetAddress IPAddress;
 
     public UDPClient(String host, int port) throws Exception {
         this.host = host;
-        this.port = port;
+        UDPInterface.port = port;
 
         socket = new DatagramSocket();
         IPAddress = InetAddress.getByName(host);

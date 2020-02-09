@@ -6,12 +6,15 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 
+/* Joao Maio s1621503 */
+
 abstract class UDPInterface {
 
-    static int port;
-    // static InetAddress IPAddress;
-    static DatagramSocket socket;
-    static int maxPacketSize = 1027;
+    public static int port;
+    public DatagramSocket socket;
+    // max defined here for convenience -- should probably be specified in 
+    // client / server in future
+    public final int maxPacketSize = 1027;
 
 
     abstract public void sendPacket(byte[] sendData, InetAddress ipAddress, int port) throws Exception;

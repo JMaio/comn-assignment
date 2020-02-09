@@ -1,5 +1,7 @@
 import java.net.DatagramPacket;
 
+/* Joao Maio s1621503 */
+
 /**
  * CustomUDPPacket
  */
@@ -63,7 +65,7 @@ public class CustomUDPPacketData {
 
     @Override
     public String toString() {
-        return String.format("CustomUDPPacketData(seq=%d, last=%b, size(data)=%d)", seq, last, data.length);
+        return String.format("CustomUDPPacketData(seq=%d, last=%b, size=%d)", seq, last, data.length);
     }
 
 }
