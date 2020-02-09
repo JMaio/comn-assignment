@@ -36,7 +36,7 @@ public class Receiver1b {
         FileOutputStream fos = new FileOutputStream(filename);
 
         boolean last = false;
-
+        int lastSeq = -1;
 
         // until final packet is received
         while (!last) {
@@ -47,11 +47,16 @@ public class Receiver1b {
             System.out.println(c);
 
             CustomACKMessage ack = new CustomACKMessage(c.seq);
+
             server.sendPacket(ack.toByteArray(), p.getAddress(), p.getPort());
-            System.out.println(ack);
-            
-            // write this to the file
-            fos.write(c.data);
+            // System.out.println(ack);
+
+            // if this is not a duplicate packet
+            if (c.seq == lastSeq + 1) {
+                // write this to the file
+                fos.write(c.data);
+                lastSeq++;
+            }
             
             last = c.last;
         }

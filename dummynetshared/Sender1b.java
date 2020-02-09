@@ -2,6 +2,8 @@ import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.net.DatagramPacket;
+import java.net.SocketTimeoutException;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -39,26 +41,36 @@ public class Sender1b {
     static UDPClient client;
 
     static String filename;
+    static long filesize;
 
     static int retryTimeout;
+    // choose 10 retries as default
+    final static int maxRetries = 10;
+    static int totalRetries = 0;
 
     static int dataPacketSize = 1024;
 
-    private static ExecutorService executorService = Executors.newSingleThreadExecutor();
+    // java Future didn't like handling timeouts
+    // private static ExecutorService executorService = Executors.newSingleThreadExecutor();
 
-    public static Future<CustomACKMessage> waitForACK() {
-        // if ack is correct, return true
-        return executorService.submit(new Callable<CustomACKMessage>() {
-            public CustomACKMessage call() throws IOException {
-                return CustomACKMessage.fromDatagramPacket(client.receivePacket());
-            }
-        });
-    }
+    // public static Callable<CustomACKMessage> waitForACK() {
+    //     // if ack is correct, return true
+    //     return new Callable<CustomACKMessage>() {
+    //         public CustomACKMessage call() throws Exception {
+    //             DatagramPacket p = client.receivePacket();
+    //             CustomACKMessage ack = CustomACKMessage.fromDatagramPacket(p);
+    //             System.out.println("got ack packet: " + ack);
+    //             return ack;
+    //         }
+    //     };
+    // }
 
-    public static void sendFile() throws Exception {
+    // measures the interval between first message transmission time 
+    // and acknowledgement receipt time for last message
+    public static long sendFile() throws Exception {
 
         File file = new File(filename);
-        long filesize = file.length();
+        filesize = file.length();
         System.out.println("file size = " + filesize);
 
         FileInputStream fis = new FileInputStream(file);
@@ -69,6 +81,9 @@ public class Sender1b {
         // int res = (x+n-1)/n
         int last = (int) ((filesize + dataPacketSize - 1) / dataPacketSize);
 
+        // get starting time
+        long t0 = System.currentTimeMillis();
+        long t1;
         for (int seq = 0; seq * dataPacketSize < filesize; seq++) {
             // this is the data in the packet -- at most, the data packet size,
             // could also be shorter if available data is lower than maxSize
@@ -78,26 +93,44 @@ public class Sender1b {
 
             CustomUDPPacketData pkt = new CustomUDPPacketData(seq, (seq + 1) == last ? true : false, data);
 
-            // ACK wait
-            CustomACKMessage ack = null;
-            do {
-                client.sendPacket(pkt.toByteArray());
-                System.out.println(String.format("sent: %s", pkt));
+            // create ack message with "-1" to be "invalid" message
+            CustomACKMessage ack = new CustomACKMessage(-1);
+            int retries = 0;
 
+            do {
+                // send data packet
+                client.sendPacket(pkt.toByteArray());
+                // ignore the time it takes to receive the last ACK by saving t1 as the last time 
+                t1 = System.currentTimeMillis();
+                
+                System.out.println(String.format("sent: %s", pkt));
+                
                 try {
-                    // start the timer
-                    ack = waitForACK().get(retryTimeout, TimeUnit.MILLISECONDS);
-                } catch (TimeoutException e) {
-                    System.out.println("ack timed out");
+                    // receive the ack packet
+                    DatagramPacket p = client.receivePacket();
+                    ack = CustomACKMessage.fromDatagramPacket(p);
+                    
+                } catch (SocketTimeoutException e) {
+                    retries++;
+                    // totalRetries++;
                 }
 
-                System.out.println(ack);
-                // if "corrupt" or incorrect seq, re-send
-            } while (ack == null || ack.seq != seq);
+                // System.out.println(ack);
+                if (retries == maxRetries) {
+                    System.out.println("max retries exceeded");
+                    break;
+                }
+                // if incorrect seq, re-send
+            } while (ack.seq != seq);
 
+            // tally retries
+            totalRetries += retries;
         }
 
         fis.close();
+
+        // time taken to 
+        return System.currentTimeMillis() - t0;
     }
 
     public static void parseArgs(String[] args) throws Exception {
@@ -125,8 +158,15 @@ public class Sender1b {
             parseArgs(args);
 
             client = new UDPClient(remoteHost, port);
+            client.socket.setSoTimeout(retryTimeout);
 
-            sendFile();
+            long time = sendFile();
+
+            // int time = 1;
+
+            int throughput = (int) (filesize / time);
+
+            System.out.println(String.format("%d %d", totalRetries, throughput));
 
         } catch (Exception e) {
             e.printStackTrace();
