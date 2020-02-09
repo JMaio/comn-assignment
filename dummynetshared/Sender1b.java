@@ -71,7 +71,7 @@ public class Sender1b {
 
         File file = new File(filename);
         filesize = file.length();
-        System.out.println("file size = " + filesize);
+        // System.out.println("file size = " + filesize);
 
         FileInputStream fis = new FileInputStream(file);
         BufferedInputStream bis = new BufferedInputStream(fis, dataPacketSize);
@@ -151,8 +151,8 @@ public class Sender1b {
             filename = args[2];
             retryTimeout = Integer.parseInt(args[3]);
 
-            System.out.println(String.format("sending file '%s' to remote host --> %s:%d [timeout=%dms]", filename,
-                    remoteHost, port, retryTimeout));
+            // System.out.println(String.format("sending file '%s' to remote host --> %s:%d [timeout=%dms]", filename,
+            //         remoteHost, port, retryTimeout));
         } catch (Exception e) {
             throw new Exception("argument parse error:" + e);
         }
