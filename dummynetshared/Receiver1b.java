@@ -44,7 +44,7 @@ public class Receiver1b {
             DatagramPacket p = server.receivePacket();
             CustomUDPPacketData c = CustomUDPPacketData.fromDatagramPacket(p);
 
-            System.out.println(c);
+            // System.out.println(c);
 
             CustomACKMessage ack = new CustomACKMessage(c.seq);
 

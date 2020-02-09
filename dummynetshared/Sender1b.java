@@ -83,7 +83,7 @@ public class Sender1b {
 
         // get starting time
         long t0 = System.currentTimeMillis();
-        long t1;
+        long t1 = t0;
         for (int seq = 0; seq * dataPacketSize < filesize; seq++) {
             // this is the data in the packet -- at most, the data packet size,
             // could also be shorter if available data is lower than maxSize
@@ -100,10 +100,8 @@ public class Sender1b {
             do {
                 // send data packet
                 client.sendPacket(pkt.toByteArray());
-                // ignore the time it takes to receive the last ACK by saving t1 as the last time 
-                t1 = System.currentTimeMillis();
                 
-                System.out.println(String.format("sent: %s", pkt));
+                // System.out.println(String.format("sent: %s", pkt));
                 
                 try {
                     // receive the ack packet
@@ -112,25 +110,32 @@ public class Sender1b {
                     
                 } catch (SocketTimeoutException e) {
                     retries++;
-                    // totalRetries++;
+                    // if final packet and max retries exceeded, stop
+                    if (seq + 1 == last && retries >= maxRetries) {
+                        break;
+                    }
                 }
 
-                // System.out.println(ack);
-                if (retries == maxRetries) {
-                    System.out.println("max retries exceeded");
-                    break;
-                }
                 // if incorrect seq, re-send
             } while (ack.seq != seq);
 
-            // tally retries
-            totalRetries += retries;
+            if (ack.seq != seq && seq + 1 == last) {
+                // if last ack was not received
+                // ignore retransmissions to receive the last ACK
+                // ignore the time it takes to receive the last 
+                break;
+            } else {
+                // if valid ack packet, record system time
+                t1 = System.currentTimeMillis();
+                // tally retries
+                totalRetries += retries;
+            }
         }
 
         fis.close();
 
-        // time taken to 
-        return System.currentTimeMillis() - t0;
+        // time taken to send
+        return t1 - t0;
     }
 
     public static void parseArgs(String[] args) throws Exception {
@@ -162,11 +167,11 @@ public class Sender1b {
 
             long time = sendFile();
 
-            // int time = 1;
+            // 1 ms == 1s ; 1KB = 1024 B ;
+            // https://www.technicalkeeda.com/java-tutorials/get-file-size-in-java
+            double throughput = ((double) filesize / 1024) / ((double) time / 1000);
 
-            int throughput = (int) (filesize / time);
-
-            System.out.println(String.format("%d %d", totalRetries, throughput));
+            System.out.println(String.format("%d %f", totalRetries, throughput));
 
         } catch (Exception e) {
             e.printStackTrace();
