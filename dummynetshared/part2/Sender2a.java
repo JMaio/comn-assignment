@@ -162,7 +162,7 @@ public class Sender2a {
             // https://www.technicalkeeda.com/java-tutorials/get-file-size-in-java
             double throughput = ((double) filesize / 1024) / ((double) time / 1000);
 
-            System.out.println(String.format("%d %f", totalRetries, throughput));
+            System.out.println(String.format("%f", throughput));
 
         } catch (Exception e) {
             e.printStackTrace();
