@@ -140,7 +140,7 @@ public class Sender2a {
             port = Integer.parseInt(args[1]);
             filename = args[2];
             retryTimeout = Integer.parseInt(args[3]);
-            windowSize = Integer.parseInt(args[3]);
+            windowSize = Integer.parseInt(args[4]);
 
             // System.out.println(String.format("sending file '%s' to remote host --> %s:%d [timeout=%dms]", filename,
             //         remoteHost, port, retryTimeout));
