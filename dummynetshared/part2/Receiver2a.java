@@ -26,10 +26,11 @@ public class Receiver2a {
 
     public static void receiveFile() throws IOException {
         File file = new File(filename);
-        // create file if not exists
-        // if (!file.exists()) {
-        //     file.createNewFile();
-        // }
+        // empty file
+        if (file.exists()) {
+            file.delete();
+            file.createNewFile();
+        }
 
         // TODO: this should probably be kept in memory until all SEQs are received
         // FileOutputStream fos = new FileOutputStream(filename);
@@ -47,19 +48,19 @@ public class Receiver2a {
             DatagramPacket p = server.receivePacket();
             CustomUDPPacketData c = CustomUDPPacketData.fromDatagramPacket(p);
 
-            // System.out.println(c);
-
             CustomACKMessage ack = new CustomACKMessage(c.seq);
             System.out.println(ack);
-
+            
             server.sendPacket(ack.toByteArray(), p.getAddress(), p.getPort());
             // System.out.println(ack);
-
+            
+            // In our GBN protocol, the receiver discards out-of-order packets (J. F. Kurose and K. W. Ross)
             // if this is not a duplicate packet
             if (c.seq == lastSeq + 1) {
+                // seek to corresponding part of the file
+                raf.seek(dataPacketSize * c.seq);
                 // void write(byte[] b, int off, int len)
                 // Writes len bytes from the specified byte array starting at offset off to this file.
-                raf.seek(dataPacketSize * c.seq);
                 raf.write(c.data);
                 lastSeq++;
             }
