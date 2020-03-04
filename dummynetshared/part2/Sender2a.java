@@ -92,11 +92,12 @@ public class Sender2a {
         final Runnable threadedTx = new Runnable() {
             @Override
             public void run() {
+                // until transfer is complete
                 while (base <= last && retries < maxRetries) {
+                    // if nextSeqNum is within window, create the packet
                     while (nextSeqNum < base + windowSize && nextSeqNum <= last) {
+                        // keep creating new packets to send
                         synchronized (lock) {
-                            // keep creating new packets to send
-                            // System.out.println("sending packet #" + nextSeqNum);
                             try {
                                 if (pkts[nextSeqNum] == null) {
                                     // okay to use buffered input stream because packets will always be created in order
@@ -106,13 +107,10 @@ public class Sender2a {
                                 }
                                 // send next packet
                                 client.sendPacket(pkts[nextSeqNum].toByteArray());
+                                // System.out.println("sent #" + nextSeqNum);
                                 nextSeqNum++;
-                                // Thread.sleep(100);
-                            } catch (Exception e) {
-                                // System.out.println("tx: " + e);
-                                // System.out.println("retrying: " + retries);
-                                // no need to handle retries here - handle in overall loop
-                            }
+                            } catch (Exception e) {}
+                            // no need to handle retries here - reset nextSeqNum from receiver thread
                         }
                     }
                 }
@@ -122,7 +120,7 @@ public class Sender2a {
         final Runnable threadedRx = new Runnable() {
             @Override
             public void run() {
-                // until done
+                // until transfer is complete
                 while (base <= last && retries < maxRetries) {
                     if (base != nextSeqNum) {
                         // only lock if there is a packet to receive
@@ -130,31 +128,18 @@ public class Sender2a {
                             try {
                                 DatagramPacket p = client.receivePacket();
                                 CustomACKMessage ack = CustomACKMessage.fromDatagramPacket(p);
-                                // System.out.println("received ack #" + ack.seq);
+
                                 if (ack.seq == base) {
                                     // ack checks out, save it
                                     acks[base] = ack;
                                     // if this is the base packet, and is ack'd, move up the base
                                     base++;
                                     retries = 0;
-                                    // System.out.println("base upped to " + base);
                                 }
-                                //  else {
-                                //     // reset next (go back n, resend)
-                                //     // base is the last ack'd packet
-                                //     // nextSeqNum = base;
-                                // }
-                                // Thread.sleep(100);
-                            }
-                            //  catch (SocketTimeoutException e) {
-                            //     // System.out.println("rx: " + e);
-                            //     nextSeqNum = base;
-                            // } 
-                            catch (Exception e) {
-                                // System.out.println("rx: " + e);
-                                // timed out, restart from base
+                            } catch (Exception e) {
+                                // one of the packets timed out, restart from base
                                 retries++;
-                                System.out.println("retrying: " + retries);
+                                // System.out.println("retrying #" + nextSeqNum + " (base = " + base + ")");
                                 nextSeqNum = base;
                             }
                         }

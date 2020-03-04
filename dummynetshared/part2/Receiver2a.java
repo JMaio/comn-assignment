@@ -49,7 +49,6 @@ public class Receiver2a {
             CustomUDPPacketData c = CustomUDPPacketData.fromDatagramPacket(p);
 
             CustomACKMessage ack = new CustomACKMessage(c.seq);
-            System.out.println(ack);
             
             server.sendPacket(ack.toByteArray(), p.getAddress(), p.getPort());
             // System.out.println(ack);
@@ -57,12 +56,15 @@ public class Receiver2a {
             // In our GBN protocol, the receiver discards out-of-order packets (J. F. Kurose and K. W. Ross)
             // if this is not a duplicate packet
             if (c.seq == lastSeq + 1) {
+                // System.out.println(ack);
                 // seek to corresponding part of the file
                 raf.seek(dataPacketSize * c.seq);
                 // void write(byte[] b, int off, int len)
                 // Writes len bytes from the specified byte array starting at offset off to this file.
                 raf.write(c.data);
                 lastSeq++;
+            } else {
+                // System.out.println("got dupe pkt: " + c.seq);
             }
             
             last = c.last;
