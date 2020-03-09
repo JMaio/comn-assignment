@@ -24,9 +24,10 @@ do
         do
             # Sender2a <RemoteHost> <Port> <Filename> <RetryTimeout> <WindowSize>
             echo $n
+            # log output of command (not command itself) into the filename, separate with a comma
             echo "\"`java Sender2a localhost 100 test.jpg $retry_timeout $window_sz`\"," >> $FILENAME
             # wait for receiver to sync
-            sleep 2
+            sleep 5
         done
         echo "-------------------"
         echo "]," >> $FILENAME
