@@ -125,22 +125,42 @@ public class Sender2a {
                     if (base != nextSeqNum) {
                         // only lock if there is a packet to receive
                         synchronized (lock) {
+                            int expected = base;
                             try {
                                 DatagramPacket p = client.receivePacket();
                                 CustomACKMessage ack = CustomACKMessage.fromDatagramPacket(p);
 
-                                if (ack.seq == base) {
-                                    // ack checks out, save it
-                                    acks[base] = ack;
-                                    // if this is the base packet, and is ack'd, move up the base
-                                    base++;
-                                    retries = 0;
-                                }
+                                // if receiver acks, treat that as the new base 
+                                // because it must have been received correctly
+                                base = ack.seq;
+                                acks[base] = ack;
+                                // base++;
+                                retries = 0;
+
+                                    // if (ack.seq == base) {
+                                //     // ack checks out, save it
+                                //     acks[base] = ack;
+                                //     // if this is the base packet, and is ack'd, move up the base
+                                //     base++;
+                                //     retries = 0;
+                                //     System.out.println("received #" + nextSeqNum + " (base = " + base + ")");
+                                // }
                             } catch (Exception e) {
-                                // one of the packets timed out, restart from base
-                                retries++;
-                                // System.out.println("retrying #" + nextSeqNum + " (base = " + base + ")");
-                                nextSeqNum = base;
+                                // if an ack for a packet with seq greater than this is received
+                                // base is incremented to that, meaning this "lost" packet
+                                // is actually only as lost "ack". if the receiver has ack'd
+                                // higher than this seq, it must have received it ok.
+                                if (base > expected) {
+                                    // all good
+                                } else {
+                                    // one of the packets timed out, restart from base
+                                    // this essentially piggybacks on the socket timer
+                                    // to generate the timeout event, and resets nextSeqNum,
+                                    // resetting the window according to the spec
+                                    retries++;
+                                    // System.out.println("retrying #" + nextSeqNum + " (base = " + base + ")");
+                                    nextSeqNum = base;
+                                }
                             }
                         }
                     }
@@ -174,6 +194,9 @@ public class Sender2a {
         tx.start();
         rx.start();
 
+        // wait until receiver thread has completed
+        // meaning last ack has been received
+        // terminates early if no ack is received after 10 retries
         synchronized (rx) {
             rx.wait();
         }
