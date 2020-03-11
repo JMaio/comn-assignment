@@ -63,6 +63,7 @@ public class Sender2a {
     static int dataPacketSize = 1024;
 
     // the base of the window, accessible from within threads
+    // treat this as last good sent packet
     public static int base = 0;
     // next packet to send
     public static int nextSeqNum = 0;
@@ -95,21 +96,25 @@ public class Sender2a {
                 // until transfer is complete
                 while (base <= last && retries < maxRetries) {
                     // if nextSeqNum is within window, create the packet
-                    while (nextSeqNum < base + windowSize && nextSeqNum <= last) {
+                    if (nextSeqNum < base + windowSize && nextSeqNum <= last) {
                         // keep creating new packets to send
                         synchronized (lock) {
                             try {
-                                if (pkts[nextSeqNum] == null) {
+                                CustomUDPPacketData pkt = pkts[nextSeqNum];
+                                if (pkt == null) {
                                     // okay to use buffered input stream because packets will always be created in order
                                     byte[] data = new byte[Math.min(dataPacketSize, bis.available())];
                                     bis.read(data);
-                                    pkts[nextSeqNum] = new CustomUDPPacketData(nextSeqNum, nextSeqNum == last, data);
+                                    pkt = new CustomUDPPacketData(nextSeqNum, nextSeqNum == last, data);
+                                    pkts[nextSeqNum] = pkt;
                                 }
                                 // send next packet
-                                client.sendPacket(pkts[nextSeqNum].toByteArray());
+                                client.sendPacket(pkt.toByteArray());
                                 // System.out.println("sent #" + nextSeqNum);
                                 nextSeqNum++;
-                            } catch (Exception e) {}
+                            } catch (Exception e) {
+                                // System.out.println("send exception: " + e);
+                            }
                             // no need to handle retries here - reset nextSeqNum from receiver thread
                         }
                     }
@@ -122,44 +127,41 @@ public class Sender2a {
             public void run() {
                 // until transfer is complete
                 while (base <= last && retries < maxRetries) {
-                    if (base != nextSeqNum) {
+                    // if waiting for a packet
+                    // only prioritise this if window size reached
+                    if (base < nextSeqNum) {
                         // only lock if there is a packet to receive
                         synchronized (lock) {
-                            int expected = base;
+                            // next pkt should be base+1
+                            int lastBase = base;
                             try {
                                 DatagramPacket p = client.receivePacket();
                                 CustomACKMessage ack = CustomACKMessage.fromDatagramPacket(p);
 
+                                // System.out.println(ack);
+                                
+                                acks[ack.seq] = ack;
                                 // if receiver acks, treat that as the new base 
                                 // because it must have been received correctly
                                 base = ack.seq;
-                                acks[base] = ack;
-                                // base++;
+                                base++;
+                                // if (ack.seq == base) {
+                                // } else if (ack.seq >= base) {
                                 retries = 0;
 
-                                    // if (ack.seq == base) {
-                                //     // ack checks out, save it
-                                //     acks[base] = ack;
-                                //     // if this is the base packet, and is ack'd, move up the base
-                                //     base++;
-                                //     retries = 0;
-                                //     System.out.println("received #" + nextSeqNum + " (base = " + base + ")");
-                                // }
                             } catch (Exception e) {
                                 // if an ack for a packet with seq greater than this is received
                                 // base is incremented to that, meaning this "lost" packet
                                 // is actually only as lost "ack". if the receiver has ack'd
                                 // higher than this seq, it must have received it ok.
-                                if (base > expected) {
-                                    // all good
-                                } else {
+                                if (base <= lastBase) {
                                     // one of the packets timed out, restart from base
                                     // this essentially piggybacks on the socket timer
                                     // to generate the timeout event, and resets nextSeqNum,
                                     // resetting the window according to the spec
                                     retries++;
-                                    // System.out.println("retrying #" + nextSeqNum + " (base = " + base + ")");
                                     nextSeqNum = base;
+                                    // System.out.println("retrying #" + nextSeqNum + " [" + e + "]");
                                 }
                             }
                         }

@@ -41,7 +41,6 @@ public class Receiver2a {
         RandomAccessFile raf = new RandomAccessFile(file, "rw");
 
         boolean last = false;
-        int lastSeq = -1;
         int base = -1;
 
         // until final packet is received
@@ -65,13 +64,16 @@ public class Receiver2a {
                 base++;
                 last = c.last;
             } else {
-                // System.out.println("got dupe pkt: " + c.seq);
+                // System.out.println("got bad/dupe pkt: " + c.seq);
             }
             // System.out.println("base = " + base);
             
             // resend ack for last "good" packet
-            CustomACKMessage ack = new CustomACKMessage(base);
-            server.sendPacket(ack.toByteArray(), p.getAddress(), p.getPort());
+            if (base > -1) {
+                CustomACKMessage ack = new CustomACKMessage(base);
+                // System.out.println(ack);
+                server.sendPacket(ack.toByteArray(), p.getAddress(), p.getPort());
+            }
         }
 
         raf.close();
