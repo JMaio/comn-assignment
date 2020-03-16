@@ -50,13 +50,13 @@ public class Receiver2b {
             // receive the next packet
             DatagramPacket p = server.receivePacket();
             CustomUDPPacketData c = CustomUDPPacketData.fromDatagramPacket(p);
-            // System.out.println(c);
+            System.out.println(c);
 
-            // In our GBN protocol, the receiver discards out-of-order packets (J. F. Kurose and K. W. Ross)
-            // if this is the next packet and not a duplicate packet
-            // if duplicate, discard
-            if (c.seq == base + 1) {
-                // System.out.println(ack);
+            if (c.seq < base + windowSize) {
+                // send ack relating to this packet
+                CustomACKMessage ack = new CustomACKMessage(c.seq);
+                server.sendPacket(ack.toByteArray(), p.getAddress(), p.getPort());
+
                 // seek to corresponding part of the file
                 raf.seek(dataPacketSize * c.seq);
                 // void write(byte[] b, int off, int len)
@@ -65,16 +65,9 @@ public class Receiver2b {
                 // lastSeq++;
                 base++;
                 last = c.last;
+
             } else {
-                // System.out.println("got bad/dupe pkt: " + c.seq);
-            }
-            // System.out.println("base = " + base);
-            
-            // resend ack for last "good" packet
-            if (base > -1) {
-                CustomACKMessage ack = new CustomACKMessage(base);
-                // System.out.println(ack);
-                server.sendPacket(ack.toByteArray(), p.getAddress(), p.getPort());
+                System.out.println("got out of order pkt: " + c.seq);
             }
         }
 
