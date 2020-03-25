@@ -94,9 +94,11 @@ public class Sender2b {
                                     byte[] data = new byte[Math.min(dataPacketSize, bis.available())];
                                     bis.read(data);
                                     pkt = new CustomUDPPacketData(nextSeqNum, nextSeqNum == last, data);
+                                    // System.out.println("create pkt: " + pkt);
                                     pkts[nextSeqNum] = pkt;
                                 }
                                 // packet not yet ack'd
+                                // System.out.println("ack " + nextSeqNum + " = " + acks[nextSeqNum]);
                                 if (acks[nextSeqNum] == null) {
                                     // (re-)send next packet
                                     client.sendPacket(pkt.toByteArray());
@@ -133,10 +135,11 @@ public class Sender2b {
                                 // save this ack. it should be used to tell whether a packet
                                 // hase been sent and properly received
                                 acks[ack.seq] = ack;
-                                System.out.println(ack);
                                 // move window forward if this is the base packet
                                 if (ack.seq == base) {
+                                    // System.out.println(ack);
                                     base++;
+                                    // System.out.println("base = " + base);
                                 }
                                 retries = 0;
 
@@ -144,6 +147,8 @@ public class Sender2b {
                                 // ack not received, keep trying to send packet
                                 // restart from base
                                 nextSeqNum = base;
+                                // System.out.println("rx exception: " + e);
+                                // System.out.println("nextSeqNum = " + base);
                             }
                         }
                     }
@@ -166,6 +171,10 @@ public class Sender2b {
         synchronized (rx) {
             rx.wait();
         }
+        
+        // if (retries == maxRetries) {
+        //     System.out.println("max retries exceeded");
+        // }
 
         long t1 = System.currentTimeMillis();
 
