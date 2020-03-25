@@ -1,11 +1,11 @@
 #!/bin/bash
-FILENAME=`date +"comn-2a-test-%Y%m%d-%H%M%S.py"`
+FILENAME=`date +"comn-2b-test-%Y%m%d-%H%M%S.py"`
 echo " writing results to $FILENAME"
 echo "------------------------------"
 
 echo "stats = {" >> $FILENAME
 
-for tx_delay in 5 25 100
+for tx_delay in 25
 do
     echo "transmission delay = $tx_delay"
     echo "$tx_delay: {" >> $FILENAME
@@ -15,7 +15,7 @@ do
 
     retry_timeout=`expr $tx_delay \* 4`
     echo "retry timeout = $retry_timeout"
-    for window_sz in 1 2 4 8 16 32 64 128 256
+    for window_sz in 1 2 4 8 16 32
     do
         echo "window_sz = $window_sz"
         echo "$window_sz: [" >> $FILENAME
@@ -26,7 +26,7 @@ do
             echo $n
             # java Sender2a localhost 100 test.jpg $retry_timeout $window_sz
             # log output of command (not command itself) into the filename, separate with a comma
-            echo "\"`java Sender2a localhost 100 test.jpg $retry_timeout $window_sz`\"," >> $FILENAME
+            echo "\"`java Sender2b localhost 100 test.jpg $retry_timeout $window_sz`\"," >> $FILENAME
             # wait for receiver to sync
             sleep 5
         done
