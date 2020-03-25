@@ -130,7 +130,7 @@ public class Sender2b {
                         // only lock if there is a packet to receive
                         synchronized (lock) {
                             // next pkt should be base+1
-                            int lastBase = base;
+                            // int lastBase = base;
                             try {
                                 DatagramPacket p = client.receivePacket();
                                 CustomACKMessage ack = CustomACKMessage.fromDatagramPacket(p);
@@ -139,8 +139,8 @@ public class Sender2b {
                                 // hase been sent and properly received
                                 acks[ack.seq] = ack;
                                 // move window forward if this is the base packet
+                                // System.out.println(ack);
                                 if (ack.seq == base) {
-                                    // System.out.println(ack);
                                     base++;
                                     // System.out.println("base = " + base);
                                 }

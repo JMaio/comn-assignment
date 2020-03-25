@@ -53,9 +53,13 @@ public class Receiver2b {
             // System.out.println(c);
             
             CustomACKMessage ack = new CustomACKMessage(c.seq);
+            
             // System.out.println(ack);
-
-            if (c.seq > base && c.seq <= base + windowSize) {
+            if (c.seq < base) {
+                // already received, still need to send ack
+                server.sendPacket(ack.toByteArray(), p.getAddress(), p.getPort());
+                // System.out.println("got out of order pkt: " + c.seq);
+            } else if (c.seq <= base + windowSize) {
                 // pkt in window size
                 // send ack relating to this packet
                 server.sendPacket(ack.toByteArray(), p.getAddress(), p.getPort());
@@ -68,10 +72,7 @@ public class Receiver2b {
                 base++;
                 last = c.last;
 
-            } else if (c.seq < base) {
-                // already received, still need to send ack
-                server.sendPacket(ack.toByteArray(), p.getAddress(), p.getPort());
-                // System.out.println("got out of order pkt: " + c.seq);
+                // System.out.println("base = " + base);
             }
             // otherwise, ignore the packet
 
