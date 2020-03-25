@@ -50,13 +50,15 @@ public class Receiver2b {
             // receive the next packet
             DatagramPacket p = server.receivePacket();
             CustomUDPPacketData c = CustomUDPPacketData.fromDatagramPacket(p);
-
-            if (c.seq < base + windowSize) {
-                // send ack relating to this packet
-                CustomACKMessage ack = new CustomACKMessage(c.seq);
-                server.sendPacket(ack.toByteArray(), p.getAddress(), p.getPort());
             // System.out.println(c);
+            
+            CustomACKMessage ack = new CustomACKMessage(c.seq);
+            // System.out.println(ack);
 
+            if (c.seq > base && c.seq <= base + windowSize) {
+                // pkt in window size
+                // send ack relating to this packet
+                server.sendPacket(ack.toByteArray(), p.getAddress(), p.getPort());
                 // seek to corresponding part of the file
                 raf.seek(dataPacketSize * c.seq);
                 // void write(byte[] b, int off, int len)
@@ -66,9 +68,13 @@ public class Receiver2b {
                 base++;
                 last = c.last;
 
-            } else {
+            } else if (c.seq < base) {
+                // already received, still need to send ack
+                server.sendPacket(ack.toByteArray(), p.getAddress(), p.getPort());
                 // System.out.println("got out of order pkt: " + c.seq);
             }
+            // otherwise, ignore the packet
+
         }
 
         raf.close();
