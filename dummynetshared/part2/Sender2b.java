@@ -102,7 +102,10 @@ public class Sender2b {
                                 if (acks[nextSeqNum] == null) {
                                     // (re-)send next packet
                                     client.sendPacket(pkt.toByteArray());
-                                    System.out.println("sent #" + nextSeqNum);
+                                    // System.out.println("sent #" + nextSeqNum);
+                                } else if (nextSeqNum == base) {
+                                    // if not null and equal to base, advance base
+                                    base++;
                                 }
                                 nextSeqNum++;
                             } catch (Exception e) {
@@ -147,6 +150,7 @@ public class Sender2b {
                                 // ack not received, keep trying to send packet
                                 // restart from base
                                 nextSeqNum = base;
+                                retries++;
                                 // System.out.println("rx exception: " + e);
                                 // System.out.println("nextSeqNum = " + base);
                             }
