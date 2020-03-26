@@ -104,7 +104,7 @@ public class Sender2b {
                                     client.sendPacket(pkt.toByteArray());
                                     // System.out.println("sent #" + nextSeqNum);
                                 } else if (nextSeqNum == base) {
-                                    // if not null and equal to base, advance base
+                                    // if pkt has been ack'd and is equal to base, advance base
                                     base++;
                                 }
                                 nextSeqNum++;
