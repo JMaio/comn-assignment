@@ -1,8 +1,13 @@
 FILENAME=`date +"comn-iperf-test-%Y%m%d-%H%M%S.py"`
 LOG=`date +"iperf-log-%Y%m%d-%H%M%S.txt"`
+
+clear
+
+# create log
+touch $LOG
+
 echo " writing results to $FILENAME"
 echo "------------------------------"
-
 echo "stats = {" >> $FILENAME
 
 PATTERN=\\d+\\.\\d+
@@ -35,21 +40,31 @@ do
         for n in {1..5}
         do
             echo $n
-            echo "$(iperf \
+            RESULT="$(iperf \
                 -c localhost        `# client mode using -c flag` \
                 -M 1KB              `# maximum segment (packet) size` \
-                -w ${window_sz}KB   `# window size` \
+                -w ${window_sz}K    `# window size` \
                 -F test.jpg         `# file to send` \
-                -t 100              `# set timeout to 100s (allow transfer completion) ` \
+                -n 900K             `# set number of bytes to transmit ` \
                 -f K                `# format in KB` \
+            )"
+                # -y                  `# output comma-separated values`
+                # -t 300              `# set timeout to allow transfer completion ` \
+            
+            THRU=$(echo $RESULT \
                 | grep -oP "$PATTERN KBytes/sec" \
-                | grep -oP "$PATTERN")," >> $FILENAME
+                | grep -oP "$PATTERN")
+
+            echo "$RESULT" >> $LOG
+            echo $THRU
+            echo "${THRU}," >> $FILENAME
             # echo $RESULT | grep 'KB'
             # wait for receiver to sync
             sleep 3
         done
 
         pkill iperf # kill iperf server
+        sleep 5
 
         echo "-------------------"
         echo "]," >> $FILENAME
