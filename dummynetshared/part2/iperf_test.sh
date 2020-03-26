@@ -34,7 +34,8 @@ do
             -s                  `# server ("send") mode using -s flag` \
             -w ${window_sz}KB   `# window size` \
             -f KB               `# format in KB` \
-            >> $LOGS            `# pipe to server log` \
+            > $LOGS             `# pipe to server log` \
+            2> /dev/null        `# discard stderr` \
             &                   `# run in background` \
             # -M 1KB              `# maximum segment (packet) size` \
         
@@ -49,6 +50,7 @@ do
                 -n 900KB            `# set number of bytes to transmit ` \
                 -F test.jpg         `# file to send` \
                 -f KB               `# format in KB` \
+                2> /dev/null
             )"
                 # -t 100              `# set timeout to allow transfer completion ` \
                 # -y                  `# output comma-separated values`
