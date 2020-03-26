@@ -1,10 +1,12 @@
 FILENAME=`date +"comn-iperf-test-%Y%m%d-%H%M%S.py"`
-LOG=`date +"iperf-log-%Y%m%d-%H%M%S.txt"`
+LOGS=`date +"iperf-s-log-%Y%m%d-%H%M%S.txt"`
+LOGC=`date +"iperf-c-log-%Y%m%d-%H%M%S.txt"`
 
 clear
 
 # create log
-touch $LOG
+touch $LOGS
+touch $LOGC
 
 echo " writing results to $FILENAME"
 echo "------------------------------"
@@ -30,11 +32,11 @@ do
         # enable server
         iperf \
             -s                  `# server ("send") mode using -s flag` \
-            -M 1KB              `# maximum segment (packet) size` \
             -w ${window_sz}KB   `# window size` \
-            >> /dev/null        `# ignore output` \
-            &                   `# run in background`
-            # -f K                `# format in KB` \
+            -f KB               `# format in KB` \
+            >> $LOGS            `# pipe to server log` \
+            &                   `# run in background` \
+            # -M 1KB              `# maximum segment (packet) size` \
         
         # run 5 times per timeout
         for n in {1..5}
@@ -43,11 +45,12 @@ do
             RESULT="$(iperf \
                 -c localhost        `# client mode using -c flag` \
                 -M 1KB              `# maximum segment (packet) size` \
-                -w ${window_sz}K    `# window size` \
+                -w ${window_sz}KB   `# window size` \
+                -n 900KB            `# set number of bytes to transmit ` \
                 -F test.jpg         `# file to send` \
-                -n 900K             `# set number of bytes to transmit ` \
-                -f K                `# format in KB` \
+                -f KB               `# format in KB` \
             )"
+                # -t 100              `# set timeout to allow transfer completion ` \
                 # -y                  `# output comma-separated values`
                 # -t 300              `# set timeout to allow transfer completion ` \
             
@@ -55,12 +58,12 @@ do
                 | grep -oP "$PATTERN KBytes/sec" \
                 | grep -oP "$PATTERN")
 
-            echo "$RESULT" >> $LOG
+            echo "$RESULT" >> $LOGC
             echo $THRU
             echo "${THRU}," >> $FILENAME
             # echo $RESULT | grep 'KB'
             # wait for receiver to sync
-            sleep 3
+            sleep 5
         done
 
         pkill iperf # kill iperf server
