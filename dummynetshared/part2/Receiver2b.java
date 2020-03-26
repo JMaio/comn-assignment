@@ -42,40 +42,57 @@ public class Receiver2b {
         // this might impact performance but it's done in advance of 2b, where it may come in handy
         RandomAccessFile raf = new RandomAccessFile(file, "rw");
 
-        boolean last = false;
-        int base = -1;
+        // max 8-bit integer
+        int last = 1 << (8 * 2); 
+        int base = 0;
+        // System.out.println(last);
+        final boolean[] pkts_recvd = new boolean[last];
 
-        // until final packet is received
-        while (!last) {
+        // --- until final packet is received ---
+        // need to wait until base is equal to last
+        while (base <= last) {
+            // this pkt has already been received
+            if (pkts_recvd[base]) {
+                base++;
+                continue;
+            }
             // receive the next packet
             DatagramPacket p = server.receivePacket();
             CustomUDPPacketData c = CustomUDPPacketData.fromDatagramPacket(p);
             // System.out.println(c);
             
             CustomACKMessage ack = new CustomACKMessage(c.seq);
-            
             // System.out.println(ack);
-            if (c.seq < base) {
-                // already received, still need to send ack
-                server.sendPacket(ack.toByteArray(), p.getAddress(), p.getPort());
-                // System.out.println("got out of order pkt: " + c.seq);
-            } else if (c.seq <= base + windowSize) {
-                // pkt in window size
+            
+            if (c.seq < base + windowSize) {
+                // packet should be ack'd
                 // send ack relating to this packet
                 server.sendPacket(ack.toByteArray(), p.getAddress(), p.getPort());
-                // seek to corresponding part of the file
-                raf.seek(dataPacketSize * c.seq);
-                // void write(byte[] b, int off, int len)
-                // Writes len bytes from the specified byte array starting at offset off to this file.
-                raf.write(c.data);
-                // lastSeq++;
-                base++;
-                last = c.last;
-
+                pkts_recvd[c.seq] = true;
+                // System.out.println(c);
+                
+                // pkt in window size
+                if (c.seq >= base) {
+                    // seek to corresponding part of the file
+                    raf.seek(dataPacketSize * c.seq);
+                    // void write(byte[] b, int off, int len)
+                    // Writes len bytes from the specified byte array starting at offset off to this file.
+                    raf.write(c.data);
+                    
+                    // received base, advance base
+                    if (c.seq == base) {
+                        base++;
+                        // System.out.println("base = " + base);
+                    }
+                }
+                
+                if (c.last) {
+                    last = c.seq;
+                    // System.out.println("set last = " + c.seq + " - base = " + base);
+                }
                 // System.out.println("base = " + base);
             }
             // otherwise, ignore the packet
-
         }
 
         raf.close();
