@@ -10,8 +10,8 @@ do
     echo "transmission delay = $tx_delay"
     echo "$tx_delay: {" >> $FILENAME
 
-    ipfw pipe 100 config delay ${tx_delay}ms plr 0.05 bw 10Mbits/s
-    ipfw pipe 200 config delay ${tx_delay}ms plr 0.05 bw 10Mbits/s
+    ipfw pipe 100 config delay ${tx_delay}ms plr 0.005 bw 10Mbits/s
+    ipfw pipe 200 config delay ${tx_delay}ms plr 0.005 bw 10Mbits/s
 
     retry_timeout=`expr $tx_delay \* 4`
     echo "retry timeout = $retry_timeout"
